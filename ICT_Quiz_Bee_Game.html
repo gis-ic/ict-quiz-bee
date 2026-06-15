@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICT Quiz Bee · Golden International School</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+    --bg:#020604; --bg2:#04140c; --panel:rgba(6,24,16,.72); --panel-solid:#061811;
+    --line:rgba(0,255,140,.16); --line-bright:rgba(0,255,140,.4);
+    --green:#00ff8c; --green-dim:#0a9d5e; --green-deep:#063b24;
+    --ink:#d7ffe9; --ink-soft:#7fcaa3; --muted:#4d7d63;
+    --amber:#ffd23f; --red:#ff4d5e; --cyan:#34f5e0;
+    --glow:0 0 24px rgba(0,255,140,.25);
+    --easy:#00ff8c; --medium:#ffd23f; --hard:#ff5d6d;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); overflow-x:hidden; position:relative;
+    letter-spacing:.2px;
+}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit;cursor:pointer;}
+input{font-family:inherit;}
+
+/* digital rain canvas sits behind everything */
+#rain{position:fixed; inset:0; z-index:0; opacity:.5;}
+.vignette{position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:radial-gradient(120% 80% at 50% 0%, transparent 40%, rgba(0,0,0,.55) 100%);}
+.scanlines{position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.35;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 3px);}
+
+.app{position:relative; z-index:5; min-height:100vh; display:flex; flex-direction:column;}
+
+/* ---------- shared shell ---------- */
+.wrap{width:100%; max-width:880px; margin:0 auto; padding:32px 24px 64px;}
+.center-screen{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 24px;}
+
+.eyebrow{font-family:'JetBrains Mono'; font-size:13px; letter-spacing:5px; text-transform:uppercase; color:var(--green-dim);}
+.glow-text{text-shadow:var(--glow);}
+
+.panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(8px); box-shadow:inset 0 1px 0 rgba(0,255,140,.06);
+}
+.bracket-card{position:relative; padding:28px;}
+/* corner brackets — the signature framing device */
+.bracket-card::before,.bracket-card::after{content:""; position:absolute; width:18px; height:18px; pointer-events:none;}
+.bracket-card::before{top:10px; left:10px; border-top:2px solid var(--green); border-left:2px solid var(--green);}
+.bracket-card::after{bottom:10px; right:10px; border-bottom:2px solid var(--green); border-right:2px solid var(--green);}
+
+/* ---------- TITLE SCREEN ---------- */
+.title-screen{text-align:center; max-width:760px;}
+.school-mark{font-family:'JetBrains Mono'; font-size:15px; letter-spacing:6px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:10px;}
+.festival{font-family:'JetBrains Mono'; font-size:13px; letter-spacing:4px; color:var(--green-dim); text-transform:uppercase; margin-bottom:34px;}
+.bee-title{font-weight:700; font-size:clamp(44px,10vw,92px); line-height:.95; letter-spacing:-2px; margin-bottom:8px;}
+.bee-title .l1{display:block; color:var(--ink);}
+.bee-title .l2{display:block; color:var(--green); text-shadow:0 0 40px rgba(0,255,140,.45);}
+.title-sub{color:var(--ink-soft); font-size:16px; margin-top:24px; line-height:1.6; max-width:520px; margin-left:auto; margin-right:auto;}
+.title-meta{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:26px;}
+.chip-meta{font-family:'JetBrains Mono'; font-size:12px; letter-spacing:1px; color:var(--ink-soft); border:1px solid var(--line); border-radius:30px; padding:8px 16px; display:flex; align-items:center; gap:8px;}
+.chip-meta i{color:var(--green);}
+.enter-btn{
+    margin-top:40px; background:var(--green); color:#021008; border:none; border-radius:12px;
+    padding:18px 44px; font-family:'JetBrains Mono'; font-weight:800; font-size:17px; letter-spacing:2px;
+    text-transform:uppercase; display:inline-flex; align-items:center; gap:14px; transition:.2s;
+    box-shadow:0 0 0 rgba(0,255,140,0);
+}
+.enter-btn:hover{box-shadow:0 0 36px rgba(0,255,140,.55); transform:translateY(-2px);}
+.cursor-blink{display:inline-block; width:11px; height:20px; background:var(--green); margin-left:4px; animation:blink 1s steps(2) infinite; vertical-align:middle;}
+@keyframes blink{50%{opacity:0;}}
+.title-credit{margin-top:30px; font-family:'JetBrains Mono'; font-size:12px; letter-spacing:1.5px; color:var(--muted); line-height:1.7;}
+.credit-name{color:var(--green); text-shadow:0 0 12px rgba(0,255,140,.5);}
+
+/* ---------- REGISTRATION ---------- */
+.reg-head{text-align:center; margin-bottom:30px;}
+.reg-head h2{font-size:32px; font-weight:700; letter-spacing:-.5px;}
+.reg-head p{color:var(--ink-soft); margin-top:8px; font-size:15px;}
+.field{margin-bottom:18px;}
+.field label{display:block; font-family:'JetBrains Mono'; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--green-dim); margin-bottom:9px;}
+.field input, .field select{
+    width:100%; background:rgba(0,0,0,.4); border:1px solid var(--line); color:var(--ink);
+    border-radius:10px; padding:15px 16px; font-size:16px; outline:none; transition:.15s;
+}
+.field input:focus, .field select:focus{border-color:var(--green); box-shadow:0 0 0 3px rgba(0,255,140,.12);}
+.field input::placeholder{color:var(--muted);}
+.member-row{display:flex; gap:10px; align-items:center; margin-bottom:12px;}
+.member-row .idx{font-family:'JetBrains Mono'; font-weight:800; color:var(--green); width:26px; text-align:center; flex-shrink:0;}
+.member-row input{flex:1;}
+.member-row .grade{width:128px; flex-shrink:0;}
+.reg-actions{margin-top:28px;}
+.btn-full{width:100%; background:var(--green); color:#021008; border:none; border-radius:12px; padding:17px; font-family:'JetBrains Mono'; font-weight:800; font-size:15px; letter-spacing:1.5px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:12px; transition:.18s;}
+.btn-full:hover{box-shadow:0 0 30px rgba(0,255,140,.45);}
+.btn-full:disabled{opacity:.4; cursor:default; box-shadow:none;}
+.btn-ghost{background:transparent; border:1px solid var(--line-bright); color:var(--ink);}
+.btn-ghost:hover{border-color:var(--green); box-shadow:none; background:rgba(0,255,140,.06);}
+.form-error{color:var(--red); font-size:13px; margin-top:10px; text-align:center; min-height:18px;}
+.sync-status{font-family:'JetBrains Mono'; font-size:11px; letter-spacing:1px; text-align:center; margin-top:14px; color:var(--muted);}
+.sync-status .dot{display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; background:var(--muted);}
+.sync-status.online .dot{background:var(--green); box-shadow:0 0 8px var(--green);}
+.sync-status.offline .dot{background:var(--amber);}
+
+/* ---------- LEVEL INTRO ---------- */
+.level-intro{text-align:center;}
+.level-intro .lv-eyebrow{font-family:'JetBrains Mono'; letter-spacing:5px; color:var(--ink-soft); text-transform:uppercase; font-size:14px;}
+.level-intro .lv-name{font-weight:700; font-size:clamp(50px,12vw,96px); line-height:1; letter-spacing:-2px; margin:10px 0;}
+.level-intro .lv-pts{font-family:'JetBrains Mono'; font-size:16px; letter-spacing:2px; display:inline-block; padding:9px 22px; border-radius:30px; border:1px solid; margin-top:6px;}
+.level-intro .lv-desc{color:var(--ink-soft); margin:22px auto 0; max-width:460px; line-height:1.6; font-size:15.5px;}
+.level-intro .confer{margin-top:24px; font-family:'JetBrains Mono'; font-size:13px; color:var(--green-dim); letter-spacing:1px;}
+
+/* ---------- QUESTION STAGE ---------- */
+.q-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:14px; flex-wrap:wrap;}
+.q-progress{display:flex; align-items:center; gap:14px;}
+.lv-tag{font-family:'JetBrains Mono'; font-weight:700; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; padding:6px 13px; border-radius:8px; border:1px solid;}
+.prog-track{display:flex; gap:4px;}
+.prog-dot{width:9px; height:9px; border-radius:50%; background:var(--green-deep); border:1px solid var(--line);}
+.prog-dot.done{background:var(--green); box-shadow:0 0 8px rgba(0,255,140,.6); border-color:var(--green);}
+.prog-dot.now{background:var(--amber); border-color:var(--amber); box-shadow:0 0 8px rgba(255,210,63,.6);}
+.q-score{font-family:'JetBrains Mono'; font-size:14px; color:var(--ink-soft);}
+.q-score b{color:var(--green); font-size:19px;}
+
+.q-card{padding:34px 32px;}
+.q-meta{display:flex; align-items:center; gap:11px; margin-bottom:18px; flex-wrap:wrap;}
+.q-cat{font-family:'JetBrains Mono'; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--green); display:flex; align-items:center; gap:8px;}
+.q-type-tag{font-family:'JetBrains Mono'; font-size:11px; letter-spacing:1px; color:var(--ink-soft); border:1px solid var(--line); border-radius:20px; padding:3px 11px;}
+.q-pts{margin-left:auto; font-family:'JetBrains Mono'; font-weight:800; font-size:14px; color:var(--amber);}
+.q-text{font-size:clamp(22px,3.4vw,30px); font-weight:600; line-height:1.4; margin-bottom:28px; letter-spacing:-.3px;}
+.q-instruction{font-family:'JetBrains Mono'; font-size:12.5px; color:var(--ink-soft); letter-spacing:.5px; margin-bottom:18px; display:flex; align-items:center; gap:8px;}
+.q-instruction i{color:var(--green);}
+
+/* options (mc / tf / multi) */
+.opts{display:grid; gap:12px;}
+.opt{
+    display:flex; align-items:center; gap:16px; background:rgba(0,0,0,.32); border:1.5px solid var(--line);
+    border-radius:12px; padding:18px 20px; font-size:17px; font-weight:500; text-align:left; color:var(--ink);
+    transition:.14s; position:relative;
+}
+.opt:hover:not(:disabled){border-color:var(--green); background:rgba(0,255,140,.06); transform:translateX(4px);}
+.opt .key{font-family:'JetBrains Mono'; font-weight:800; width:34px; height:34px; border-radius:9px; background:var(--green-deep); color:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--line); font-size:14px;}
+.opt.selected{border-color:var(--green); background:rgba(0,255,140,.1);}
+.opt.selected .key{background:var(--green); color:#021008;}
+.opt.correct{border-color:var(--green); background:rgba(0,255,140,.14); box-shadow:0 0 20px rgba(0,255,140,.2);}
+.opt.correct .key{background:var(--green); color:#021008;}
+.opt.wrong{border-color:var(--red); background:rgba(255,77,94,.12);}
+.opt.wrong .key{background:var(--red); color:#fff;}
+.opt:disabled{cursor:default;}
+.opt .check-ic{margin-left:auto; opacity:0; color:var(--green);}
+.opt.selected .check-ic{opacity:1;}
+
+/* type / blank / trace inputs */
+.type-zone{display:flex; flex-direction:column; gap:14px;}
+.type-input{
+    width:100%; background:rgba(0,0,0,.45); border:2px solid var(--line); color:var(--green);
+    border-radius:12px; padding:20px; font-family:'JetBrains Mono'; font-weight:700; font-size:26px;
+    text-align:center; letter-spacing:4px; outline:none; transition:.15s;
+}
+.type-input:focus{border-color:var(--green); box-shadow:0 0 0 3px rgba(0,255,140,.12);}
+.type-input.correct{border-color:var(--green); background:rgba(0,255,140,.1);}
+.type-input.wrong{border-color:var(--red); background:rgba(255,77,94,.1);}
+
+/* bits builder — place values shown ON TOP as a guide */
+.bits-target{text-align:center; margin-bottom:18px;}
+.bits-target-label{display:block; font-family:'JetBrains Mono'; font-size:11px; letter-spacing:3px; color:var(--ink-soft); margin-bottom:2px;}
+.bits-target .tnum{font-family:'JetBrains Mono'; font-weight:800; font-size:54px; color:var(--amber); text-shadow:0 0 24px rgba(255,210,63,.45); line-height:1;}
+.bits-row{display:flex; gap:10px; justify-content:center; margin:8px 0 4px;}
+.bit{flex:1 1 0; min-width:0; max-width:78px; text-align:center;}
+.bit .v{width:100%; aspect-ratio:1/1; border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono'; font-weight:800; font-size:26px; border:2px solid var(--line); transition:.12s; user-select:none; cursor:pointer;}
+.bit .v.on{background:var(--green); color:#021008; border-color:var(--green); box-shadow:0 0 18px rgba(0,255,140,.45);}
+.bit .v.off{background:rgba(0,0,0,.4); color:var(--muted);}
+.bit .v:hover{transform:scale(1.06);}
+.bit .p-top{font-family:'JetBrains Mono'; font-size:14px; font-weight:700; color:var(--amber); margin-bottom:8px; opacity:.85;}
+
+/* match (tap-pairing) — bigger, clearer, higher contrast */
+.match-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+.match-col{display:flex; flex-direction:column; gap:12px;}
+.match-col h4{font-family:'JetBrains Mono'; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--green-dim); margin-bottom:4px; text-align:center;}
+.match-item{background:rgba(4,20,12,.85); border:1.5px solid var(--line-bright); border-radius:12px; padding:18px 16px; font-size:17px; font-weight:600; color:var(--ink); text-align:center; transition:.14s; min-height:62px; display:flex; align-items:center; justify-content:center; gap:8px; line-height:1.3; position:relative;}
+.match-item:hover:not(:disabled):not(.matched){border-color:var(--green); background:rgba(0,255,140,.07);}
+.match-item.active{border-color:var(--amber); background:rgba(255,210,63,.14); box-shadow:0 0 18px rgba(255,210,63,.25);}
+.match-item.matched{border-color:var(--green); background:rgba(0,255,140,.1); color:var(--ink);}
+.match-item .pairtag{font-family:'JetBrains Mono'; font-weight:800; color:var(--green); font-size:13px;}
+.match-item .m-text{flex:1;}
+.match-item.wrong{border-color:var(--red); background:rgba(255,77,94,.12);}
+
+/* binary→decimal place-value guide */
+.place-guide{margin:6px 0 18px; padding:16px; background:rgba(0,0,0,.5); border:1px solid var(--line-bright); border-radius:12px;}
+.pg-label{font-family:'JetBrains Mono'; font-size:11px; letter-spacing:1px; color:var(--ink-soft); text-align:center; margin-bottom:12px;}
+.pg-grid{display:flex; gap:8px; justify-content:center;}
+.pg-col{flex:1 1 0; min-width:0; max-width:70px; text-align:center;}
+.pg-val{font-family:'JetBrains Mono'; font-size:14px; font-weight:700; color:var(--amber); margin-bottom:6px;}
+.pg-bit{font-family:'JetBrains Mono'; font-size:24px; font-weight:800; padding:8px 0; border-radius:9px; border:2px solid var(--line); color:var(--muted); background:rgba(0,0,0,.3);}
+.pg-bit.on{color:var(--green); border-color:var(--green); background:rgba(0,255,140,.1); box-shadow:0 0 12px rgba(0,255,140,.25);}
+.script-block{background:rgba(0,0,0,.55); border:1px solid var(--line-bright); border-radius:12px; padding:18px 18px; margin:6px 0 20px; overflow-x:auto; box-shadow:inset 0 0 30px rgba(0,255,140,.05);}
+.sb-row{font-family:'JetBrains Mono'; font-size:16px; line-height:1.85; white-space:nowrap;}
+.sb-ctrl{color:var(--amber); font-weight:700;}
+.sb-cmd{color:var(--green); font-weight:600;}
+.sb-line{color:var(--ink);}
+
+/* per-question timer */
+.q-right{display:flex; align-items:center; gap:16px;}
+.timer-chip{position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;}
+.timer-num{position:absolute; font-size:13px; font-weight:800; color:var(--ink);}
+.timer-chip.danger .timer-num{color:#ff5d6d;}
+.timer-chip.danger{animation:tpulse .8s infinite;}
+@keyframes tpulse{50%{transform:scale(1.08);}}
+
+/* order (reorder list) */
+.order-list{display:flex; flex-direction:column; gap:10px;}
+.order-item{display:flex; align-items:center; gap:14px; background:rgba(0,0,0,.32); border:1.5px solid var(--line); border-radius:11px; padding:15px 16px; font-size:16px; font-weight:500; transition:.14s;}
+.order-item .ohandle{display:flex; flex-direction:column; gap:3px;}
+.order-num{font-family:'JetBrains Mono'; font-weight:800; color:var(--green); width:24px; text-align:center;}
+.order-arrows{display:flex; flex-direction:column; margin-left:auto; gap:2px;}
+.order-arrows button{background:var(--green-deep); border:1px solid var(--line); color:var(--green); width:34px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:.12s;}
+.order-arrows button:hover:not(:disabled){background:var(--green); color:#021008;}
+.order-arrows button:disabled{opacity:.25; cursor:default;}
+.order-item.correct{border-color:var(--green); background:rgba(0,255,140,.1);}
+.order-item.wrong{border-color:var(--red); background:rgba(255,77,94,.08);}
+
+/* submit + feedback */
+.submit-row{margin-top:26px;}
+.feedback{margin-top:22px; padding:0; max-height:0; overflow:hidden; transition:max-height .35s ease, padding .35s ease; border-radius:12px;}
+.feedback.show{max-height:400px; padding:20px 22px;}
+.feedback.correct{background:rgba(0,255,140,.08); border:1px solid var(--green);}
+.feedback.wrong{background:rgba(255,77,94,.07); border:1px solid var(--red);}
+.fb-head{display:flex; align-items:center; gap:12px; font-weight:700; font-size:19px; margin-bottom:8px;}
+.fb-head.correct{color:var(--green);} .fb-head.wrong{color:var(--red);}
+.fb-icon{width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px;}
+.fb-icon.correct{background:rgba(0,255,140,.16); color:var(--green);}
+.fb-icon.wrong{background:rgba(255,77,94,.16); color:var(--red);}
+.fb-why{color:var(--ink-soft); font-size:15px; line-height:1.55;}
+.fb-why .ans{color:var(--green); font-weight:600;}
+
+.next-row{margin-top:18px;}
+
+/* ---------- RESULTS / PODIUM ---------- */
+.result-screen{text-align:center; max-width:640px;}
+.result-screen .done-eyebrow{font-family:'JetBrains Mono'; letter-spacing:5px; color:var(--green-dim); text-transform:uppercase; font-size:14px;}
+.result-screen h2{font-size:40px; font-weight:700; margin:10px 0; letter-spacing:-1px;}
+.final-score{font-family:'JetBrains Mono'; font-weight:800; font-size:74px; color:var(--green); text-shadow:0 0 40px rgba(0,255,140,.4); line-height:1;}
+.final-score .max{color:var(--muted); font-size:32px;}
+.result-line{color:var(--ink-soft); margin:14px 0 28px; font-size:16px; line-height:1.6;}
+.stat-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; margin-bottom:28px;}
+.stat-box{padding:18px 12px;}
+.stat-box .sv{font-family:'JetBrains Mono'; font-weight:800; font-size:28px;}
+.stat-box .sl{font-family:'JetBrains Mono'; font-size:11px; letter-spacing:1px; color:var(--ink-soft); text-transform:uppercase; margin-top:4px;}
+.lvl-breakdown{display:flex; flex-direction:column; gap:10px; margin-bottom:28px;}
+.lvl-bd-row{display:flex; align-items:center; gap:14px; padding:14px 18px;}
+.lvl-bd-row .lname{font-family:'JetBrains Mono'; font-weight:700; letter-spacing:1px; font-size:13px; text-transform:uppercase; width:70px; text-align:left;}
+.lvl-bd-row .lbar{flex:1; height:8px; background:rgba(0,0,0,.4); border-radius:6px; overflow:hidden;}
+.lvl-bd-row .lfill{height:100%; border-radius:6px;}
+.lvl-bd-row .lval{font-family:'JetBrains Mono'; font-size:13px; color:var(--ink-soft); width:64px; text-align:right;}
+
+/* toast */
+.toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:var(--panel-solid); border:1px solid var(--line-bright); border-radius:11px; padding:13px 20px; font-size:14px; z-index:600; box-shadow:0 10px 40px rgba(0,0,0,.6); display:flex; align-items:center; gap:11px; animation:tup .3s; max-width:90vw;}
+@keyframes tup{from{transform:translate(-50%,18px);opacity:0;}to{transform:translate(-50%,0);opacity:1;}}
+.toast i{color:var(--green);}
+
+/* correct/wrong full-screen pulse — formal yet satisfying */
+.pulse{position:fixed; inset:0; z-index:400; pointer-events:none; opacity:0;}
+.pulse.fire{animation:pulseFire .6s ease;}
+.pulse.correct{box-shadow:inset 0 0 160px rgba(0,255,140,.5);}
+.pulse.wrong{box-shadow:inset 0 0 160px rgba(255,77,94,.45);}
+@keyframes pulseFire{0%{opacity:0;}30%{opacity:1;}100%{opacity:0;}}
+
+.glitch{position:fixed; inset:0; z-index:380; pointer-events:none;}
+
+.hint{font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); text-align:center; margin-top:18px; letter-spacing:.5px;}
+.hint kbd{background:var(--green-deep); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--green);}
+
+@media (max-width:640px){
+    .wrap{padding:22px 16px 50px;}
+    .q-card{padding:24px 20px;}
+    .match-grid{gap:14px;}
+    .member-row{flex-wrap:wrap;}
+    .member-row .grade{width:100%;}
+    .stat-row{gap:8px;}
+    .hint{display:none;}
+    .bracket-card::before,.bracket-card::after{display:none;}
+}
+@media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}
+    #rain{display:none;}
+}
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="pulse" id="pulse"></div>
+<div class="app"><div id="screen" class="wrap"></div></div>
+
+<script id="bank" type="application/json">{"easy":[{"cat":"Hardware","type":"mc","q":"Which part of a computer is called the 'brain'?","opts":["The CPU","The RAM","The hard drive","The monitor"],"answer":0,"why":"The CPU (Central Processing Unit) carries out the instructions \u2014 the 'brain' of the computer.","accept":[]},{"cat":"Hardware","type":"mc","q":"Which of these is an INPUT device?","opts":["A microphone","A printer","A monitor","A speaker"],"answer":0,"why":"A microphone sends sound data INTO the computer, so it is an input device.","accept":[]},{"cat":"Hardware","type":"mc","q":"Which of these is an OUTPUT device?","opts":["A projector","A keyboard","A scanner","A mouse"],"answer":0,"why":"A projector sends information OUT to the audience, so it is an output device.","accept":[]},{"cat":"Hardware","type":"tf","q":"An SSD has no moving parts and is generally faster than a hard disk drive (HDD).","answer":1,"why":"True. An SSD uses flash memory with no moving parts, so it is faster and more durable than an HDD.","opts":[],"accept":[]},{"cat":"Computers","type":"mc","q":"What is the correct order of the basic computer system model?","opts":["Input, process, output","Process, input, output","Output, process, input","Input, output, process"],"answer":0,"why":"Computers take Input, then Process it, then produce Output \u2014 in that order.","accept":[]},{"cat":"Hardware","type":"mc","q":"What is the main job of RAM?","opts":["To hold data being used right now","To store files forever","To display the picture","To connect to the internet"],"answer":0,"why":"RAM is fast temporary memory holding what you are working on now; it empties when the power is off.","accept":[]},{"cat":"Software","type":"mc","q":"Which of these is SOFTWARE?","opts":["A web browser","A motherboard","A keyboard","A monitor"],"answer":0,"why":"Software is a set of programs; a web browser is software. The others are physical hardware.","accept":[]},{"cat":"Software","type":"mc","q":"What does an operating system (like Windows) mainly do?","opts":["It runs and manages the computer","It edits your photos","It connects the cables","It powers the screen"],"answer":0,"why":"The operating system is the master program that runs the computer and lets other apps work.","accept":[]},{"cat":"Networking","type":"mc","q":"What does Wi-Fi mainly let devices do?","opts":["Join a network without cables","Cool themselves down","Charge their batteries","Increase their storage"],"answer":0,"why":"Wi-Fi connects devices to a network using radio waves, so no cables are needed.","accept":[]},{"cat":"Networking","type":"tf","q":"The Internet is the world's largest example of a WAN (Wide Area Network).","answer":1,"why":"True. The Internet links networks across the whole world, making it the biggest WAN.","opts":[],"accept":[]},{"cat":"Internet","type":"mc","q":"Which of these should you keep PRIVATE online?","opts":["Your home address","Your favourite colour","Your favourite sport","Your favourite food"],"answer":0,"why":"Your home address is personal and could be misused; the others are safe to share.","accept":[]},{"cat":"Internet","type":"mc","q":"A link arrives from someone you don't know. What is safest?","opts":["Do not click it","Click to see what it is","Share it with friends","Reply with your details"],"answer":0,"why":"Unexpected links can be scams or viruses \u2014 the safest choice is not to click.","accept":[]},{"cat":"Data","type":"mc","q":"In computing, what is 'data'?","opts":["Facts, numbers and symbols","A kind of computer","A type of cable","A storage cupboard"],"answer":0,"why":"Data is the raw facts, numbers and symbols that computers store and process.","accept":[]},{"cat":"Binary","type":"mc","q":"How many different digits does binary use?","opts":["Two","Ten","Eight","Sixteen"],"answer":0,"why":"Binary uses only two digits: 0 and 1.","accept":[]},{"cat":"Binary","type":"tf","q":"In binary, the digit 1 usually means ON and 0 means OFF.","answer":1,"why":"True. A 1 means on (current flowing) and a 0 means off.","opts":[],"accept":[]},{"cat":"Scratch","type":"mc","q":"In Scratch, what is a 'sprite'?","opts":["A character or object you program","A kind of repeating loop","A pop-up error message","A type of network cable"],"answer":0,"why":"A sprite is a character or object on the stage that you give code to.","accept":[]},{"cat":"Scratch","type":"mc","q":"In Scratch, what does clicking the green flag do?","opts":["Starts the program running","Deletes the whole project","Adds a brand-new sprite","Turns off the sound"],"answer":0,"why":"The green flag runs scripts that start with 'when green flag clicked'.","accept":[]},{"cat":"General","type":"mc","q":"What best describes Artificial Intelligence (AI)?","opts":["Machines that learn and decide","A faster kind of monitor","A large storage drive","A wireless network cable"],"answer":0,"why":"AI is technology that can learn from data and make human-like decisions.","accept":[]},{"cat":"Hardware","type":"blank","q":"Eight bits grouped together make one ______.","answer":"byte","accept":["byte","a byte","bytes"],"why":"8 bits = 1 byte.","opts":[]},{"cat":"Software","type":"mc","q":"What does it mean to 'debug' a program?","opts":["Find and fix its errors","Add more colours to it","Save it to the cloud","Print it on paper"],"answer":0,"why":"Debugging means finding and removing bugs (errors) so the program works correctly.","accept":[]},{"cat":"Networking","type":"match","q":"Match each device to whether it is an INPUT or an OUTPUT device.","pairs":[["Keyboard","Input"],["Speaker","Output"],["Microphone","Input"],["Printer","Output"]],"why":"Keyboards and microphones send data in; speakers and printers send results out.","opts":[],"accept":[]},{"cat":"Computers","type":"multi","q":"Select ALL of these that are storage devices.","opts":["SSD","USB flash drive","Hard disk drive","Monitor","Mouse"],"answer":[0,1,2],"why":"SSDs, USB flash drives and hard disk drives all store data. A monitor and mouse do not.","accept":[]},{"cat":"Internet","type":"tf","q":"Using the same simple password everywhere keeps your accounts safe.","answer":0,"why":"False. Strong, different passwords are far safer \u2014 one leak shouldn't unlock everything.","opts":[],"accept":[]},{"cat":"Data","type":"mc","q":"What is a 'pixel'?","opts":["A tiny dot of colour in an image","A small network cable","A type of fast memory","A single binary digit"],"answer":0,"why":"Images are built from pixels \u2014 tiny coloured dots arranged in a grid.","accept":[]},{"cat":"AI","type":"tf","q":"IS IT AI?  A chatbot reads your typed question and writes a new answer back.","answer":1,"why":"Yes \u2014 a chatbot uses AI to understand language and generate a reply.","opts":[],"accept":[]},{"cat":"AI","type":"tf","q":"IS IT AI?  A calculator shows 4 after you press 2, +, 2, =.","answer":0,"why":"No \u2014 a calculator follows fixed maths rules. It does not learn or decide, so it isn't AI.","opts":[],"accept":[]},{"cat":"AI","type":"tf","q":"IS IT AI?  Your phone unlocks by recognising your face.","answer":1,"why":"Yes \u2014 face recognition uses AI trained to tell faces apart.","opts":[],"accept":[]},{"cat":"AI","type":"tf","q":"IS IT AI?  A light turns on when you flip the switch on the wall.","answer":0,"why":"No \u2014 a switch just completes a circuit. There is no learning or decision, so it isn't AI.","opts":[],"accept":[]},{"cat":"AI","type":"mc","q":"Which of these most clearly uses AI?","opts":["A voice assistant that understands speech","A torch that lights when switched on","A clock that ticks every second","A doorbell that rings when pressed"],"answer":0,"why":"A voice assistant uses AI to understand spoken language; the others follow simple fixed actions.","accept":[]}],"medium":[{"cat":"Networking","type":"mc","q":"Why is data split into 'packets' before it travels a network?","opts":["So pieces can travel separately and rejoin","So the data becomes much larger","So the data is permanently deleted","So the data turns into pictures"],"answer":0,"why":"Splitting data into packets lets pieces travel the best routes, then rejoin in order at the destination.","accept":[]},{"cat":"Networking","type":"blank","q":"The device that links your home network to your internet provider is the ______.","answer":"modem","accept":["modem","a modem","router","modem/router"],"why":"A modem connects your home network to your internet service provider.","opts":[]},{"cat":"Networking","type":"order","q":"Put these networks in order from the SMALLEST area covered to the LARGEST.","items":["PAN \u2014 personal","LAN \u2014 local","WAN \u2014 wide","The Internet"],"why":"Smallest to largest: PAN (around you) \u2192 LAN (a building) \u2192 WAN (cities/countries) \u2192 the global Internet.","opts":[],"accept":[]},{"cat":"Software","type":"mc","q":"What is an algorithm?","opts":["A step-by-step set of instructions","A physical part of a computer","A unit of computer storage","A type of network cable"],"answer":0,"why":"An algorithm is a precise, ordered set of steps that solves a problem.","accept":[]},{"cat":"Software","type":"match","q":"Match each program to the job it is designed for.","pairs":[["Web browser","Visit websites"],["Word processor","Write documents"],["Image editor","Change photos"],["Spreadsheet","Work with numbers"]],"why":"Each application is built for a specific task: browsing, writing, editing images, or calculating.","opts":[],"accept":[]},{"cat":"Internet","type":"mc","q":"The padlock and 'https' on a website tell you that\u2026","opts":["The connection is encrypted","The website is free to use","The website has no adverts","The website loads faster"],"answer":0,"why":"HTTPS means the data between you and the site is encrypted, so it is harder for others to read.","accept":[]},{"cat":"Data","type":"mc","q":"A bar chart whose y-axis starts at 80 instead of 0 can\u2026","opts":["Exaggerate small differences","Show the data more honestly","Make all bars look equal","Remove the need for labels"],"answer":0,"why":"Starting the axis high stretches small gaps so they look big \u2014 a common way graphs mislead.","accept":[]},{"cat":"Data","type":"match","q":"Match each data term to its meaning.","pairs":[["Primary data","You collected it"],["Secondary data","Others collected it"],["Reliable source","Can be checked"],["Biased data","Made to mislead"]],"why":"Primary = your own data; secondary = someone else's; reliable = verifiable; biased = slanted to mislead.","opts":[],"accept":[]},{"cat":"Computers","type":"mc","q":"When the computer is switched off, what happens to data in RAM?","opts":["It is lost","It is saved forever","It moves to the CPU","It prints automatically"],"answer":0,"why":"RAM is volatile memory \u2014 anything not saved to storage disappears when the power goes off.","accept":[]},{"cat":"General","type":"multi","q":"Select ALL of these that genuinely use AI.","opts":["Language translation apps","Predictive text on phones","Face unlock on a phone","A microwave's preset timer"],"answer":[0,1,2],"why":"Translation, predictive text and face unlock all use AI. A preset timer just counts down \u2014 no AI.","accept":[]},{"cat":"Networking","type":"mc","q":"What does 'bandwidth' describe?","opts":["How much data fits through at once","How long a cable is","How heavy a router is","How many apps are open"],"answer":0,"why":"Bandwidth is the amount of data a connection can carry per second \u2014 higher bandwidth means more at once.","accept":[]},{"cat":"Scratch","type":"mc","q":"Which Scratch block makes a DECISION based on a condition?","opts":["the 'if \u2026 then' block","the 'forever' block","the 'move 10 steps' block","the 'when clicked' block"],"answer":0,"why":"'if \u2026 then' runs the code inside only when its condition is true \u2014 this is selection.","accept":[]},{"cat":"Scratch","type":"trace","q":"What is the final value of the variable score?","lines":[{"t":"set [score] to (0)","d":0},{"t":"repeat (4)","d":0},{"t":"change [score] by (3)","d":1}],"answer":"12","accept":["12"],"why":"Score starts at 0 and gains 3 four times: 0 \u2192 3 \u2192 6 \u2192 9 \u2192 12.","opts":[]},{"cat":"Scratch","type":"trace","q":"What is the final value of the variable lives?","lines":[{"t":"set [lives] to (3)","d":0},{"t":"change [lives] by (-1)","d":0},{"t":"change [lives] by (-1)","d":0}],"answer":"1","accept":["1"],"why":"Lives starts at 3 and loses 1 twice: 3 \u2192 2 \u2192 1.","opts":[]},{"cat":"Scratch","type":"trace","q":"A sprite starts at x = 0. What is its x position at the end?","lines":[{"t":"go to x: (0) y: (0)","d":0},{"t":"repeat (3)","d":0},{"t":"change x by (10)","d":1}],"answer":"30","accept":["30"],"why":"x gains 10 three times: 0 \u2192 10 \u2192 20 \u2192 30.","opts":[]},{"cat":"Binary","type":"bits","bitcount":4,"q":"Build the number 6 using the four binary switches below.","answer":6,"why":"6 = 4 + 2, so the nibble is 0110.","opts":[],"accept":[]},{"cat":"Binary","type":"typed_mc","q":"Convert the binary nibble 1011 to a decimal number.","answer":"11","accept":["11"],"why":"8 + 0 + 2 + 1 = 11.","opts":[]},{"cat":"Computers","type":"order","q":"Order these memory types from the FASTEST for the CPU to reach to the SLOWEST.","items":["CPU cache","RAM","SSD","Hard disk drive"],"why":"Cache is fastest (inside the CPU), then RAM, then the SSD, and a spinning hard disk is slowest.","opts":[],"accept":[]},{"cat":"Internet","type":"tf","q":"If a fact appears as the first search result, it must be true.","answer":0,"why":"False. Ranking high doesn't prove accuracy \u2014 check the source and compare other trusted sites.","opts":[],"accept":[]},{"cat":"Hardware","type":"mc","q":"A computer slows down with many apps open. Which upgrade helps MOST?","opts":["Adding more RAM","Adding a bigger screen","Adding a faster mouse","Adding louder speakers"],"answer":0,"why":"More RAM lets the computer keep more programs open at once without slowing down.","accept":[]},{"cat":"Software","type":"blank","q":"An error in a program that makes it behave wrongly is called a ______.","answer":"bug","accept":["bug","a bug","bugs"],"why":"A fault in code is a 'bug'; removing it is called debugging.","opts":[]},{"cat":"Data","type":"bits","bitcount":4,"q":"Build the number 13 using the four binary switches below.","answer":13,"why":"13 = 8 + 4 + 1, so the nibble is 1101.","opts":[],"accept":[]},{"cat":"Scratch","type":"mc","q":"What does a 'broadcast' block do in Scratch?","opts":["Sends a message to other scripts","Deletes the current sprite","Changes the sprite's colour","Saves the whole project"],"answer":0,"why":"Broadcasting sends a message that can trigger 'when I receive' scripts on any sprite.","accept":[]},{"cat":"Networking","type":"multi","q":"Select ALL the wireless technologies.","opts":["Wi-Fi","Bluetooth","Ethernet cable","Fibre-optic cable"],"answer":[0,1],"why":"Wi-Fi and Bluetooth send data through the air; Ethernet and fibre-optic use physical cables.","accept":[]},{"cat":"Scratch","type":"trace","q":"What is the final value of the variable total?","lines":[{"t":"set [total] to (10)","d":0},{"t":"repeat (3)","d":0},{"t":"change [total] by (2)","d":1},{"t":"change [total] by (-1)","d":1}],"answer":"13","accept":["13"],"why":"Each loop adds 2 then subtracts 1 (net +1), three times: 10 \u2192 11 \u2192 12 \u2192 13.","opts":[]}],"hard":[{"cat":"Binary","type":"typed_mc","q":"Convert the binary number 01011011 to decimal.","answer":"91","accept":["91"],"why":"64 + 16 + 8 + 2 + 1 = 91.","opts":[]},{"cat":"Binary","type":"typed_mc","q":"Convert the binary number 11001000 to decimal.","answer":"200","accept":["200"],"why":"128 + 64 + 8 = 200.","opts":[]},{"cat":"Binary","type":"type","q":"Write the decimal number 45 as an 8-bit binary number.","answer":"00101101","accept":["00101101","101101"],"why":"32 + 8 + 4 + 1 = 45 \u2192 00101101.","opts":[]},{"cat":"Binary","type":"bits","bitcount":8,"q":"Build the number 150 using the eight binary switches below.","answer":150,"why":"150 = 128 + 16 + 4 + 2 \u2192 10010110.","opts":[],"accept":[]},{"cat":"Binary","type":"typed_mc","q":"What is the largest number you can store in one byte (8 bits)?","answer":"255","accept":["255"],"why":"11111111 = 128+64+32+16+8+4+2+1 = 255.","opts":[]},{"cat":"Scratch","type":"trace","q":"What is the final value of points?","lines":[{"t":"set [points] to (0)","d":0},{"t":"repeat (4)","d":0},{"t":"if <(points) < (5)> then","d":1},{"t":"change [points] by (3)","d":2},{"t":"else","d":1},{"t":"change [points] by (1)","d":2}],"answer":"8","accept":["8"],"why":"Each loop: if points<5 add 3, else add 1. 0\u21923\u21926 (now \u22655) \u21927\u21928. Final value 8.","opts":[]},{"cat":"Scratch","type":"trace","q":"What is the final value of count?","lines":[{"t":"set [count] to (0)","d":0},{"t":"repeat (3)","d":0},{"t":"repeat (4)","d":1},{"t":"change [count] by (1)","d":2}],"answer":"12","accept":["12"],"why":"The inner loop adds 1 four times, once for each of the 3 outer loops: 3 \u00d7 4 = 12.","opts":[]},{"cat":"Scratch","type":"trace","q":"What is the final value of b?","lines":[{"t":"set [a] to (2)","d":0},{"t":"set [b] to (5)","d":0},{"t":"change [a] by (b)","d":0},{"t":"change [b] by (a)","d":0}],"answer":"12","accept":["12"],"why":"a becomes 2 + 5 = 7. Then b becomes 5 + 7 = 12.","opts":[]},{"cat":"Scratch","type":"trace","q":"What is the final value of sum?","lines":[{"t":"set [sum] to (0)","d":0},{"t":"set [i] to (1)","d":0},{"t":"repeat (3)","d":0},{"t":"change [sum] by (i)","d":1},{"t":"change [i] by (1)","d":1}],"answer":"6","accept":["6"],"why":"Add i, then increase i, three times: 0+1=1 (i\u21922), 1+2=3 (i\u21923), 3+3=6.","opts":[]},{"cat":"Scratch","type":"trace","q":"The variable n starts at 8. What is n at the end?","lines":[{"t":"set [n] to (8)","d":0},{"t":"if <(n) > (5)> then","d":0},{"t":"change [n] by (10)","d":1},{"t":"else","d":0},{"t":"change [n] by (-10)","d":1}],"answer":"18","accept":["18"],"why":"n is 8, and 8 > 5 is true, so it runs the 'then' branch: 8 + 10 = 18.","opts":[]},{"cat":"Scratch","type":"mc","q":"In Scratch, what does 'create clone of myself' do?","opts":["Makes a copy that runs its own code","Deletes the sprite from the stage","Renames the current sprite","Stops every sound playing"],"answer":0,"why":"A clone is a live copy of the sprite that runs its 'when I start as a clone' scripts.","accept":[]},{"cat":"Scratch","type":"mc","q":"Why would you make a custom block ('My Block') in Scratch?","opts":["To reuse code you name yourself","To change the stage backdrop","To remove all variables","To join a Wi-Fi network"],"answer":0,"why":"A custom block lets you name and reuse a chunk of code, like defining your own command.","accept":[]},{"cat":"Scratch","type":"order","q":"Order the blocks so the RECEIVING sprite reacts correctly to a signal.","items":["when I receive [go]","move (100) steps","say [Arrived!]"],"why":"It must first wait for the message ('when I receive'), then act, then report.","opts":[],"accept":[]},{"cat":"Computers","type":"mc","q":"Why do computers store everything in binary?","opts":["Switches are simply on or off","Humans naturally count in twos","Binary uses less electricity","Binary looks more colourful"],"answer":0,"why":"Transistors are reliably either on or off, which matches the two binary digits 1 and 0.","accept":[]},{"cat":"Hardware","type":"mc","q":"A higher CPU clock speed (more GHz) usually means\u2026","opts":["More instructions handled per second","A larger and brighter screen","More storage space for files","A quieter cooling fan"],"answer":0,"why":"Clock speed is cycles per second, so more GHz means more instructions processed each second.","accept":[]},{"cat":"Software","type":"order","q":"Put the programming process steps into the correct order.","items":["Understand the problem","Plan the algorithm","Write the code","Test and debug"],"why":"You understand the problem, plan a solution, write it, then test and debug it.","opts":[],"accept":[]},{"cat":"Networking","type":"mc","q":"Why can a wired Ethernet link be more reliable than Wi-Fi?","opts":["The cable avoids signal interference","Cables are always much cheaper","Wi-Fi cannot reach computers","Wired links use no electricity"],"answer":0,"why":"A signal travelling inside a cable isn't weakened by walls or other wireless signals nearby.","accept":[]},{"cat":"Scratch","type":"multi","q":"Select ALL the Scratch features that help you AVOID repeating code.","opts":["Loops (repeat / forever)","Custom blocks (My Blocks)","Clones","Copying blocks by hand"],"answer":[0,1,2],"why":"Loops, custom blocks and clones all reduce repeated code. Copying by hand just adds more.","accept":[]},{"cat":"Binary","type":"type","q":"Write the decimal number 100 as an 8-bit binary number.","answer":"01100100","accept":["01100100","1100100"],"why":"64 + 32 + 4 = 100 \u2192 01100100.","opts":[]},{"cat":"Data","type":"mc","q":"How is a digital photo ultimately stored inside a computer?","opts":["As binary numbers for each pixel","As tiny hand-drawn pictures","As recorded sound waves","As plain typed words"],"answer":0,"why":"Every pixel's colour is recorded as binary numbers, so the whole image is stored as data.","accept":[]},{"cat":"General","type":"mc","q":"Why should you always fact-check an AI chatbot's answer?","opts":["It can sound sure yet be wrong","It can never form a sentence","It only ever copies books","It always refuses to answer"],"answer":0,"why":"AI can 'hallucinate' \u2014 give confident but incorrect answers \u2014 so important facts should be verified.","accept":[]}],"digital":[{"cat":"AI","tier":"easy","pts":2,"type":"mc","q":"How does an AI image generator mostly learn to make pictures?","opts":["By studying huge numbers of existing images","By taking new photos with a camera","By drawing everything by hand","By copying one single picture"],"answer":0,"why":"AI learns patterns from very large collections of existing images, then generates new ones from those patterns.","accept":[]},{"cat":"AI","tier":"medium","pts":3,"type":"multi","q":"Select ALL the clues that a photo might be AI-generated.","opts":["Hands with the wrong number of fingers","Strange, jumbled text in the background","Blurry or melted small details","A normal date printed in the corner"],"answer":[0,1,2],"why":"AI images often slip on hands, text and fine details. A normal printed date is not a reliable clue by itself.","accept":[]},{"cat":"AI","tier":"medium","pts":3,"type":"tf","q":"AI can be biased if it learns from unfair or one-sided data.","answer":1,"why":"True. AI reflects the data it learns from, so biased data can lead to unfair results.","opts":[],"accept":[]},{"cat":"AI","tier":"hard","pts":5,"type":"mc","q":"You use an AI tool to help with homework. What is the responsible thing to do?","opts":["Check its answer and understand it yourself","Copy it word-for-word and hand it in","Trust it fully without reading it","Hide that you used a tool at all"],"answer":0,"why":"AI is a helper, not a replacement for thinking. Check, understand and learn from it \u2014 and be honest about using it.","accept":[]},{"cat":"AI","tier":"medium","pts":3,"type":"mc","q":"An AI chatbot states a 'fact' you've never heard. What's the smart move?","opts":["Verify it with a trusted source","Believe it because AI is clever","Share it straight away","Assume it must be false"],"answer":0,"why":"AI can be confidently wrong, so check important claims against a reliable source before trusting or sharing them.","accept":[]},{"cat":"Rights","tier":"easy","pts":2,"type":"tf","q":"You have a right to keep your private messages and personal information private online.","answer":1,"why":"True. The Convention on the Rights of the Child (Article 16) says every child has a right to privacy \u2014 including online.","opts":[],"accept":[]},{"cat":"Rights","tier":"medium","pts":3,"type":"mc","q":"A child has the right to RELIABLE information from media and computers. Online, this means you should\u2026","opts":["Check that information comes from trustworthy sources","Believe every video you see","Only read the headline","Trust whatever is most popular"],"answer":0,"why":"Article 17 gives children the right to reliable information. Online, that means checking sources rather than believing everything.","accept":[]},{"cat":"Rights","tier":"medium","pts":3,"type":"mc","q":"Someone is being bullied in a group chat. The right to be protected from harm means you should\u2026","opts":["Tell a trusted adult and support them","Join in so you fit in","Ignore it completely","Forward it to more people"],"answer":0,"why":"Children have the right to be protected from harm (Article 19). Online, that includes reporting cyberbullying to a trusted adult.","accept":[]},{"cat":"Rights","tier":"easy","pts":2,"type":"tf","q":"Every child has the right to rest and play, so balancing screen time with other activities matters.","answer":1,"why":"True. Article 31 gives children the right to rest and play \u2014 a healthy balance with screen time supports that right.","opts":[],"accept":[]},{"cat":"Rights","tier":"medium","pts":3,"type":"mc","q":"Children have the right to share their own views. Online, you can do this responsibly by\u2026","opts":["Expressing ideas kindly and respectfully","Posting anything to get attention","Insulting people who disagree","Sharing others' secrets"],"answer":0,"why":"Article 12/13 protect a child's right to be heard and to express views \u2014 done respectfully, without harming others.","accept":[]},{"cat":"Rights","tier":"hard","pts":5,"type":"match","q":"Match each online action to the child's right it supports.","pairs":[["Keeping your password secret","Right to privacy"],["Checking if a source is true","Right to reliable information"],["Reporting cyberbullying","Right to be protected from harm"],["Using apps to learn","Right to education"]],"why":"Privacy (Art 16), reliable information (Art 17), protection from harm (Art 19) and education (Art 28) all apply in digital life.","opts":[],"accept":[]},{"cat":"Rights","tier":"medium","pts":3,"type":"tf","q":"All children should be treated fairly and kindly online, whoever they are.","answer":1,"why":"True. Article 2 says all rights apply to every child without discrimination \u2014 digital kindness is part of that.","opts":[],"accept":[]},{"cat":"Rights","tier":"hard","pts":5,"type":"mc","q":"An online game asks a child for their home address to 'win a prize'. Using your rights, you should\u2026","opts":["Refuse \u2014 protect your private information","Send it quickly to win","Post it in the game chat","Share a friend's address instead"],"answer":0,"why":"Your right to privacy (Article 16) means protecting personal details. Prize requests for your address are a common scam.","accept":[]}]}</script>
+<script>
+/* =====================================================================
+   CONFIG — paste your Google Apps Script Web App URL between the quotes
+   to enable the live leaderboard. Leave blank to run fully offline.
+   See the setup guide for how to get this URL.
+   ===================================================================== */
+const CONFIG = {
+  SHEET_URL: ""   // e.g. "https://script.google.com/macros/s/AKfy..../exec"
+};
+
+/* =====================================================================
+   ICT QUIZ BEE — Golden International School · Academic Festival 2026
+   Game engine.  Plays Easy -> Medium -> Hard, exam-style (no going back).
+   Posts registration + per-question results to Google Apps Script.
+   ===================================================================== */
+const BANK = JSON.parse(document.getElementById('bank').textContent);
+
+const LEVELS = [
+  {key:"easy",   name:"Easy",   pts:2, secs:30, color:"var(--easy)",   hex:"#00ff8c",
+   desc:"Foundations — hardware, software and the everyday ideas behind computers."},
+  {key:"medium", name:"Medium", pts:3, secs:45, color:"var(--medium)", hex:"#ffd23f",
+   desc:"Applying what you know — networks, data, safety and logic with a twist."},
+  {key:"hard",   name:"Hard",   pts:5, secs:75, color:"var(--hard)",   hex:"#ff5d6d",
+   desc:"Mastery — binary conversion and tracing advanced Scratch scripts."},
+  {key:"digital", name:"Digital Citizen", pts:0, secs:50, color:"var(--cyan)", hex:"#34f5e0", mixed:true,
+   desc:"AI awareness and your digital rights — thinking, fairness and staying safe online."}
+];
+const CAT_ICON={Hardware:"fa-microchip",Software:"fa-window-restore",Networking:"fa-network-wired",
+  Internet:"fa-globe",Data:"fa-chart-column",General:"fa-robot",Computers:"fa-desktop",
+  Binary:"fa-1",Scratch:"fa-cat",AI:"fa-robot",Rights:"fa-scale-balanced"};
+const TYPE_LABEL={mc:"Choose one",tf:"True or false",multi:"Select all that apply",
+  type:"Type the answer",typed_mc:"Type the number",blank:"Fill the blank",
+  match:"Match the pairs",order:"Put in order",bits:"Build with bits",trace:"Trace the script"};
+
+const QUESTIONS_PER_LEVEL = 20;   // host can run ~1 hour across 60 questions
+
+/* ---------- state ---------- */
+let S = {
+  team:null, members:[], levelIdx:0, qIdx:0,
+  deck:{easy:[],medium:[],hard:[]},
+  score:0, correct:0, wrong:0,
+  perLevel:{easy:{c:0,w:0,pts:0},medium:{c:0,w:0,pts:0},hard:{c:0,w:0,pts:0},digital:{c:0,w:0,pts:0}},
+  answeredThis:false, sessionId:null
+};
+let reg = { team:"", members:[{name:"",grade:""},{name:"",grade:""},{name:"",grade:""}] };
+
+const $=id=>document.getElementById(id);
+const screen=()=>$('screen');
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+/* =====================================================================
+   DIGITAL RAIN (Matrix backdrop) — subtle, performance-aware
+   ===================================================================== */
+(function rain(){
+  const c=$('rain'),x=c.getContext('2d');
+  let cols,drops,fontSize=16;
+  const glyphs="01ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈ<>/{}[]=+*ICTBINARY";
+  function resize(){c.width=innerWidth;c.height=innerHeight;cols=Math.floor(c.width/fontSize);drops=Array(cols).fill(1);}
+  resize(); addEventListener('resize',resize);
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function draw(){
+    x.fillStyle="rgba(2,6,4,.09)"; x.fillRect(0,0,c.width,c.height);
+    x.font=fontSize+"px JetBrains Mono, monospace";
+    for(let i=0;i<drops.length;i++){
+      const ch=glyphs[Math.floor(Math.random()*glyphs.length)];
+      const xpos=i*fontSize, ypos=drops[i]*fontSize;
+      // bright white-green leading character, dimmer green trail (classic Matrix)
+      if(Math.random()>0.86){
+        x.globalAlpha=1; x.fillStyle="#c9ffe6"; x.shadowColor="#00ff8c"; x.shadowBlur=8;
+      } else {
+        x.globalAlpha=Math.random()*0.5+0.22; x.fillStyle="#00ff8c"; x.shadowBlur=0;
+      }
+      x.fillText(ch,xpos,ypos);
+      x.shadowBlur=0;
+      if(ypos>c.height && Math.random()>0.975) drops[i]=0;
+      drops[i]++;
+    }
+    x.globalAlpha=1;
+  }
+  setInterval(draw,75);
+})();
+
+/* =====================================================================
+   FX — formal-yet-fun correct / wrong feedback
+   ===================================================================== */
+function pulse(kind){
+  const p=$('pulse'); p.className='pulse '+kind; void p.offsetWidth; p.classList.add('fire');
+  setTimeout(()=>p.classList.remove('fire'),600);
+}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.innerHTML=`<i class="fas fa-circle-check"></i> ${msg}`;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2200);}
+
+/* =====================================================================
+   GOOGLE SHEETS SYNC  (via Apps Script web app)
+   - CONFIG.SHEET_URL is injected; if blank, app runs fully offline.
+   - Uses no-cors POST (fire-and-forget) so it never blocks gameplay.
+   ===================================================================== */
+const SYNC = {
+  url: (typeof CONFIG!=='undefined' && CONFIG.SHEET_URL) ? CONFIG.SHEET_URL : "",
+  on(){ return !!this.url; },
+  post(payload){
+    if(!this.url) return;
+    try{
+      fetch(this.url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(payload)});
+    }catch(e){ /* never break the game over telemetry */ }
+  }
+};
+function syncRegister(){
+  S.sessionId=uid();
+  SYNC.post({type:"register", sessionId:S.sessionId, team:S.team,
+    members:S.members, ts:new Date().toISOString()});
+}
+function syncProgress(extra){
+  SYNC.post(Object.assign({
+    type:"progress", sessionId:S.sessionId, team:S.team,
+    score:S.score, correct:S.correct, wrong:S.wrong,
+    level:LEVELS[S.levelIdx]?LEVELS[S.levelIdx].key:"done",
+    perLevel:S.perLevel, ts:new Date().toISOString()
+  }, extra||{}));
+}
+
+/* =====================================================================
+   SCREEN 1 — TITLE
+   ===================================================================== */
+function renderTitle(){
+  screen().className="wrap center-screen";
+  screen().innerHTML=`
+    <div class="title-screen">
+      <div class="school-mark">Golden International School</div>
+      <div class="festival">Academic Festival 2026</div>
+      <h1 class="bee-title"><span class="l1">ICT</span><span class="l2 glow-text" id="beeWord">QUIZ BEE</span></h1>
+      <p class="title-sub">A team challenge across three levels of computing mastery. Enter the system, work together, and prove your team knows the machine.</p>
+      <div class="title-meta">
+        <span class="chip-meta"><i class="fas fa-users"></i> Teams of 3</span>
+        <span class="chip-meta"><i class="fas fa-layer-group"></i> 4 rounds</span>
+        <span class="chip-meta"><i class="fas fa-shield-halved"></i> AI &amp; digital rights</span>
+      </div>
+      <button class="enter-btn" onclick="renderRegister()">Enter the system <i class="fas fa-angle-right"></i><span class="cursor-blink"></span></button>
+      <div class="title-credit">Designed &amp; presented by <span class="credit-name">Teacher Rommel</span></div>
+    </div>`;
+  decodeEffect($('beeWord'), "QUIZ BEE");
+}
+/* Matrix-style "decode" reveal: scrambles glyphs then settles to the target text */
+function decodeEffect(el, finalText){
+  if(!el || matchMedia('(prefers-reduced-motion: reduce)').matches){ if(el) el.textContent=finalText; return; }
+  const glyphs="01ABCDEFｱｲｳｴｵ<>/=+*"; let frame=0; const total=finalText.length;
+  const id=setInterval(()=>{
+    let out="";
+    for(let i=0;i<finalText.length;i++){
+      if(finalText[i]===' '){ out+=' '; continue; }
+      out += (i < frame) ? finalText[i] : glyphs[Math.floor(Math.random()*glyphs.length)];
+    }
+    el.textContent=out;
+    frame += 0.5;
+    if(frame>total){ el.textContent=finalText; clearInterval(id); }
+  },45);
+}
+
+/* =====================================================================
+   SCREEN 2 — REGISTRATION
+   ===================================================================== */
+const GRADES=["Year 5","Year 6","Year 7"];
+function renderRegister(){
+  screen().className="wrap";
+  screen().innerHTML=`
+    <div style="max-width:560px;margin:0 auto">
+      <div class="reg-head">
+        <div class="eyebrow">Step 01 — Registration</div>
+        <h2 style="margin-top:10px">Register your team</h2>
+        <p>Choose a team name, then enter each member's full name and grade.</p>
+      </div>
+      <div class="panel bracket-card">
+        <div class="field">
+          <label><i class="fas fa-flag"></i> Team name</label>
+          <input id="teamName" type="text" maxlength="28" placeholder="e.g. The Binary Brains" value="${esc(reg.team)}" oninput="reg.team=this.value; validateReg();">
+        </div>
+        <div class="field">
+          <label><i class="fas fa-user-group"></i> Team members (3)</label>
+          <div id="memberList"></div>
+        </div>
+        <div class="reg-actions">
+          <button class="btn-full" id="startBtn" onclick="submitRegister()" disabled>
+            Begin the Quiz Bee <i class="fas fa-angle-right"></i>
+          </button>
+          <div class="form-error" id="regErr"></div>
+          <div class="sync-status ${SYNC.on()?'online':'offline'}" id="syncStatus">
+            <span class="dot"></span>${SYNC.on()?'Live results connected':'Offline mode — scores stay on this computer'}
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:18px">
+        <button class="btn-ghost" style="border-radius:10px;padding:11px 20px;font-size:13px" onclick="renderTitle()"><i class="fas fa-angle-left"></i> Back</button>
+      </div>
+    </div>`;
+  renderMembers(); validateReg();
+}
+function renderMembers(){
+  $('memberList').innerHTML=reg.members.map((m,i)=>`
+    <div class="member-row">
+      <span class="idx">${i+1}</span>
+      <input type="text" maxlength="40" placeholder="Full name" value="${esc(m.name)}" oninput="reg.members[${i}].name=this.value; validateReg();">
+      <select class="grade" onchange="reg.members[${i}].grade=this.value; validateReg();">
+        <option value="">Grade…</option>
+        ${GRADES.map(g=>`<option value="${g}" ${m.grade===g?'selected':''}>${g}</option>`).join("")}
+      </select>
+    </div>`).join("");
+}
+function validateReg(){
+  const ok = reg.team.trim().length>=2 && reg.members.every(m=>m.name.trim().length>=2 && m.grade);
+  const b=$('startBtn'); if(b) b.disabled=!ok;
+  return ok;
+}
+function submitRegister(){
+  if(!validateReg()){ $('regErr').textContent="Please fill in the team name and all three members with their grades."; return; }
+  S.team=reg.team.trim();
+  S.members=reg.members.map(m=>({name:m.name.trim(),grade:m.grade}));
+  // build each round's deck now (randomised per team at open time)
+  LEVELS.forEach(l=>{
+    const pool = BANK[l.key]||[];
+    const cap = l.mixed ? pool.length : QUESTIONS_PER_LEVEL;  // digital round uses all its items
+    S.deck[l.key]=shuffle(pool).slice(0,cap).map(prepQ);
+  });
+  S.levelIdx=0; S.qIdx=0; S.score=0; S.correct=0; S.wrong=0;
+  syncRegister();
+  renderLevelIntro();
+}
+function prepQ(q){
+  const c=JSON.parse(JSON.stringify(q));
+  if(c.type==='mc'||c.type==='tf'||c.type==='multi'){
+    const base = (c.type==='tf') ? ["False","True"] : (c.opts||[]);
+    const labelled = base.map((t,i)=>({t,i}));
+    c._opts=shuffle(labelled);
+  }
+  if(c.type==='order'){ c._items=shuffle(c.items.map((t,i)=>({t,correct:i}))); if(JSON.stringify(c._items.map(x=>x.correct))===JSON.stringify(c.items.map((_,i)=>i))) c._items=shuffle(c._items); }
+  if(c.type==='match'){ c._left=c.pairs.map((p,i)=>({t:p[0],i})); c._right=shuffle(c.pairs.map((p,i)=>({t:p[1],i}))); }
+  if(c.type==='bits'){ c._bits=Array(c.bitcount).fill(0); c._place=c.bitcount===4?[8,4,2,1]:[128,64,32,16,8,4,2,1]; }
+  c._sel = c.type==='multi'?[]:null;
+  return c;
+}
+
+/* =====================================================================
+   SCREEN 3 — LEVEL INTRO
+   ===================================================================== */
+function qPoints(q){ const l=LEVELS[S.levelIdx]; return l.mixed ? (q.pts||2) : l.pts; }
+function renderLevelIntro(){
+  screen().className="wrap center-screen";
+  const l=LEVELS[S.levelIdx];
+  const ptsLabel = l.mixed ? "MIXED POINTS" : `${l.pts} POINTS EACH`;
+  screen().innerHTML=`
+    <div class="level-intro">
+      <div class="lv-eyebrow">Level ${S.levelIdx+1} of ${LEVELS.length}</div>
+      <div class="lv-name glow-text" style="color:${l.hex}">${l.name}</div>
+      <div class="lv-pts" style="color:${l.hex};border-color:${l.hex}">${ptsLabel} · ${S.deck[l.key].length} QUESTIONS</div>
+      <div class="lv-desc">${l.desc}</div>
+      <div class="confer"><i class="fas fa-comments"></i> Confer with your team before you lock each answer — you can't go back.</div>
+      <div style="margin-top:30px">
+        <button class="btn-full" style="width:auto;padding:16px 40px" onclick="startLevel()">Start Level ${S.levelIdx+1} <i class="fas fa-angle-right"></i></button>
+      </div>
+    </div>`;
+}
+function startLevel(){ S.qIdx=0; renderQuestion(); }
+
+/* =====================================================================
+   SCREEN 4 — QUESTION  (dispatches by type)
+   ===================================================================== */
+function currentDeck(){ return S.deck[LEVELS[S.levelIdx].key]; }
+function currentQ(){ return currentDeck()[S.qIdx]; }
+
+function renderQuestion(){
+  screen().className="wrap";
+  const l=LEVELS[S.levelIdx], deck=currentDeck();
+  if(S.qIdx>=deck.length){ return endLevel(); }
+  const q=deck[S.qIdx];
+  S.answeredThis=false;
+  const dots=deck.map((_,i)=>`<span class="prog-dot ${i<S.qIdx?'done':i===S.qIdx?'now':''}"></span>`).join("");
+  const secs=l.secs;
+  screen().innerHTML=`
+    <div class="q-head">
+      <div class="q-progress">
+        <span class="lv-tag" style="color:${l.hex};border-color:${l.hex}">${l.name}</span>
+        <div class="prog-track">${dots}</div>
+      </div>
+      <div class="q-right">
+        <div class="timer-chip" id="timerChip">
+          <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="rgba(0,255,140,.15)" stroke-width="4"/>
+            <circle id="timerArc" cx="20" cy="20" r="16" fill="none" stroke="${l.hex}" stroke-width="4" stroke-linecap="round"
+              stroke-dasharray="${2*Math.PI*16}" stroke-dashoffset="0" transform="rotate(-90 20 20)"/></svg>
+          <span class="timer-num mono" id="timerNum">${secs}</span>
+        </div>
+        <div class="q-score">SCORE <b>${S.score}</b></div>
+      </div>
+    </div>
+    <div class="panel bracket-card q-card">
+      <div class="q-meta">
+        <span class="q-cat"><i class="fas ${CAT_ICON[q.cat]||'fa-circle'}"></i> ${q.cat}</span>
+        <span class="q-type-tag">${TYPE_LABEL[q.type]||q.type}</span>
+        <span class="q-pts">+${qPoints(q)} PTS</span>
+      </div>
+      <div class="q-text">${esc(q.q)}</div>
+      <div id="qbody"></div>
+      <div class="feedback" id="feedback"></div>
+      <div id="submitRow"></div>
+    </div>
+    <div class="hint" id="qhint"></div>`;
+  renderBody(q);
+  startTimer(secs, l.hex);
+}
+
+/* ---------- per-question timer ---------- */
+let TIMER={id:null,left:0,total:0};
+function startTimer(secs,hex){
+  stopTimer();
+  TIMER.left=secs; TIMER.total=secs;
+  const arc=$('timerArc'); const circ=2*Math.PI*16;
+  updateTimerUI(hex);
+  TIMER.id=setInterval(()=>{
+    TIMER.left--;
+    updateTimerUI(hex);
+    if(TIMER.left<=0){ stopTimer(); onTimeUp(); }
+  },1000);
+}
+function updateTimerUI(hex){
+  const num=$('timerNum'), arc=$('timerArc'), chip=$('timerChip');
+  if(!num||!arc) return;
+  num.textContent=Math.max(0,TIMER.left);
+  const circ=2*Math.PI*16;
+  arc.style.strokeDashoffset=circ*(1-TIMER.left/TIMER.total);
+  // colour shifts to red in final 20%
+  const danger = TIMER.left<=Math.max(5,Math.ceil(TIMER.total*0.2));
+  arc.style.stroke = danger ? '#ff5d6d' : hex;
+  if(chip) chip.classList.toggle('danger', danger);
+}
+function stopTimer(){ if(TIMER.id){clearInterval(TIMER.id);TIMER.id=null;} }
+function onTimeUp(){
+  if(S.answeredThis) return;
+  // auto-lock: mark as no-answer and reveal correct
+  const q=currentQ();
+  S.answeredThis=true;
+  const l=LEVELS[S.levelIdx];
+  revealCorrectness(q,false);
+  S.wrong++; S.perLevel[l.key].w++;
+  pulse('wrong');
+  showFeedbackTimeout(q);
+  const lockBtn=$('lockBtn'); if(lockBtn){ lockBtn.disabled=true; lockBtn.style.display='none'; }
+  const last = S.qIdx===currentDeck().length-1;
+  $('submitRow').insertAdjacentHTML('beforeend',
+    `<div class="next-row"><button class="btn-full" id="nextBtn" onclick="nextQuestion()">${last?'Finish level':'Next question'} <i class="fas fa-angle-right"></i></button></div>`);
+  syncProgress({event:"answer", cat:q.cat, correct:false, type:q.type, timedOut:true});
+}
+function showFeedbackTimeout(q){
+  const fb=$('feedback');
+  let correctText=correctAnswerText(q);
+  fb.className='feedback show wrong';
+  fb.innerHTML=`
+    <div class="fb-head wrong"><span class="fb-icon wrong"><i class="fas fa-hourglass-end"></i></span> Time's up</div>
+    <div class="fb-why">${correctText?`<span class="ans">Answer: ${esc(correctText)}.</span> `:''}${esc(q.why)}</div>`;
+}
+
+function renderBody(q){
+  const body=$('qbody'); const sr=$('submitRow');
+  const submitBtn=(label='Lock in answer')=>`<div class="submit-row"><button class="btn-full" id="lockBtn" onclick="submitAnswer()">${label} <i class="fas fa-lock"></i></button></div>`;
+  switch(q.type){
+    case 'mc': case 'tf': {
+      const keys=["A","B","C","D"];
+      body.innerHTML=`<div class="q-instruction"><i class="fas fa-hand-pointer"></i> ${TYPE_LABEL[q.type]}</div>
+        <div class="opts" id="opts">${q._opts.map((o,vi)=>`
+          <button class="opt" onclick="pickSingle(${vi})"><span class="key">${keys[vi]}</span> ${esc(o.t)} <i class="fas fa-circle-check check-ic"></i></button>`).join("")}</div>`;
+      sr.innerHTML=submitBtn();
+      $('qhint').innerHTML=`Keys <kbd>A</kbd>–<kbd>D</kbd> to select · <kbd>Enter</kbd> to lock`;
+      break;
+    }
+    case 'multi': {
+      const keys=["A","B","C","D","E"];
+      body.innerHTML=`<div class="q-instruction"><i class="fas fa-list-check"></i> Select ALL correct answers, then lock in.</div>
+        <div class="opts" id="opts">${q._opts.map((o,vi)=>`
+          <button class="opt" onclick="pickMulti(${vi})"><span class="key">${keys[vi]}</span> ${esc(o.t)} <i class="fas fa-circle-check check-ic"></i></button>`).join("")}</div>`;
+      sr.innerHTML=submitBtn();
+      break;
+    }
+    case 'type': case 'typed_mc': case 'blank': case 'trace': {
+      const ph = q.type==='blank'?'Type the missing word':(q.type==='trace'?'Type the result':'Type your answer');
+      let scriptBlock='';
+      if(q.type==='trace' && q.lines){
+        scriptBlock=`<div class="script-block">${q.lines.map(ln=>{
+          const cls = /^(repeat|forever|if|else)/.test(ln.t)?'sb-ctrl':(/^(set|change|go to|move|say)/.test(ln.t)?'sb-cmd':'sb-line');
+          return `<div class="sb-row" style="padding-left:${ln.d*26}px"><span class="${cls}">${esc(ln.t)}</span></div>`;
+        }).join("")}</div>`;
+      }
+      // Binary→decimal guide: if the question shows a run of binary digits, line up place values above it
+      let placeGuide='';
+      const bm = q.q.match(/\b([01]{4,8})\b/);
+      if((q.type==='typed_mc'||q.type==='type') && bm && /decimal/i.test(q.q)){
+        const bits=bm[1].split('');
+        const places=[128,64,32,16,8,4,2,1].slice(8-bits.length);
+        placeGuide=`<div class="place-guide">
+          <div class="pg-label">Place values — add the columns where the bit is 1</div>
+          <div class="pg-grid">
+            ${places.map((p,i)=>`<div class="pg-col"><div class="pg-val">${p}</div><div class="pg-bit ${bits[i]==='1'?'on':''}">${bits[i]}</div></div>`).join("")}
+          </div>
+        </div>`;
+      }
+      const instr = q.type==='trace'
+        ? 'Read the script line by line, work out the result, then type it.'
+        : (q.type==='typed_mc' ? 'Work it out and type the number.' : TYPE_LABEL[q.type]);
+      body.innerHTML=`<div class="q-instruction"><i class="fas fa-${q.type==='trace'?'code':'keyboard'}"></i> ${instr}</div>
+        ${scriptBlock}${placeGuide}
+        <div class="type-zone"><input class="type-input" id="typeInput" autocomplete="off" spellcheck="false" placeholder="${ph}"></div>`;
+      sr.innerHTML=submitBtn('Check answer');
+      const inp=$('typeInput'); inp.focus(); inp.addEventListener('keydown',e=>{if(e.key==='Enter')submitAnswer();});
+      $('qhint').innerHTML=`Press <kbd>Enter</kbd> to check`;
+      break;
+    }
+    case 'bits': {
+      const target=q.answer;
+      body.innerHTML=`
+        <div class="q-instruction"><i class="fas fa-toggle-on"></i> Switch bits ON until they make the target number.</div>
+        <div class="bits-target"><span class="bits-target-label">TARGET</span><div class="tnum mono" id="bitsTarget">${target}</div></div>
+        <div class="bits-row" id="bitsRow"></div>`;
+      sr.innerHTML=submitBtn();
+      paintBits(q);
+      break;
+    }
+    case 'match': {
+      const PAIR_COLORS=["#00ff8c","#ffd23f","#34f5e0","#ff9d5c","#a78bfa"];
+      q._pairColors=PAIR_COLORS;
+      body.innerHTML=`
+        <div class="q-instruction"><i class="fas fa-link"></i> Tap an item on the left, then its match on the right. Tap a paired item again to undo.</div>
+        <div class="match-grid">
+          <div class="match-col"><h4>Item</h4>${q._left.map((o,i)=>`<button class="match-item" data-side="L" data-i="${o.i}" onclick="matchTap('L',${o.i},this)"><span class="m-text">${esc(o.t)}</span><span class="pairtag" id="lt${o.i}"></span></button>`).join("")}</div>
+          <div class="match-col"><h4>Matches with</h4>${q._right.map((o)=>`<button class="match-item" data-side="R" data-i="${o.i}" onclick="matchTap('R',${o.i},this)"><span class="m-text">${esc(o.t)}</span><span class="pairtag" id="rt${o.i}"></span></button>`).join("")}</div>
+        </div>`;
+      sr.innerHTML=submitBtn();
+      q._match={picks:{},activeL:null,count:0,colorOf:{}};
+      break;
+    }
+    case 'order': {
+      body.innerHTML=`<div class="q-instruction"><i class="fas fa-arrow-down-1-9"></i> Use the arrows to put these in the correct order.</div>
+        <div class="order-list" id="orderList"></div>`;
+      sr.innerHTML=submitBtn();
+      paintOrder(q);
+      break;
+    }
+  }
+}
+
+/* ---------- single select (mc/tf) ---------- */
+function pickSingle(vi){
+  const q=currentQ(); if(S.answeredThis) return;
+  q._sel=vi;
+  document.querySelectorAll('#opts .opt').forEach((b,i)=>b.classList.toggle('selected',i===vi));
+}
+/* ---------- multi select ---------- */
+function pickMulti(vi){
+  const q=currentQ(); if(S.answeredThis) return;
+  if(!q._sel) q._sel=[];
+  const k=q._sel.indexOf(vi);
+  if(k>=0) q._sel.splice(k,1); else q._sel.push(vi);
+  document.querySelectorAll('#opts .opt').forEach((b,i)=>b.classList.toggle('selected',q._sel.includes(i)));
+}
+/* ---------- bits ---------- */
+function paintBits(q){
+  // place values are shown ON TOP as a guide; no running total (students analyse themselves)
+  $('bitsRow').innerHTML=q._bits.map((b,i)=>`
+    <div class="bit">
+      <div class="p p-top">${q._place[i]}</div>
+      <div class="v ${b?'on':'off'}" onclick="toggleBit(${i})">${b}</div>
+    </div>`).join("");
+}
+function bitsValue(q){ return q._bits.reduce((s,b,i)=>s+b*q._place[i],0); }
+function toggleBit(i){ const q=currentQ(); if(S.answeredThis) return; q._bits[i]=q._bits[i]?0:1; paintBits(q); }
+/* ---------- match ---------- */
+function matchTap(side,i,el){
+  const q=currentQ(); if(S.answeredThis) return;
+  const m=q._match;
+  if(side==='L'){
+    // if already paired, tapping undoes that pair
+    if(m.picks['L'+i]!=null){ unpair(q,i); return; }
+    document.querySelectorAll('.match-item[data-side="L"]').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active'); m.activeL=i;
+  } else {
+    // tapping a paired right item undoes it
+    const ownerL=Object.keys(m.picks).find(k=>m.picks[k]==='R'+i);
+    if(ownerL){ unpair(q, +ownerL.slice(1)); return; }
+    if(m.activeL==null){ toast("Pick an item on the left first."); return; }
+    const pairNo=nextPairNumber(q);
+    m.picks['L'+m.activeL]='R'+i;
+    m.colorOf['L'+m.activeL]=pairNo;
+    m.count=Object.keys(m.picks).length;
+    paintPair(q, m.activeL, i, pairNo);
+    m.activeL=null;
+  }
+}
+function nextPairNumber(q){
+  const used=new Set(Object.values(q._match.colorOf));
+  let n=1; while(used.has(n)) n++; return n;
+}
+function paintPair(q,li,ri,no){
+  const c=q._pairColors[(no-1)%q._pairColors.length];
+  const lEl=document.querySelector(`.match-item[data-side="L"][data-i="${li}"]`);
+  const rEl=document.querySelector(`.match-item[data-side="R"][data-i="${ri}"]`);
+  lEl.classList.add('matched'); lEl.classList.remove('active'); rEl.classList.add('matched');
+  lEl.style.borderColor=c; rEl.style.borderColor=c;
+  $('lt'+li).innerHTML=`<span style="color:${c}">●</span> ${no}`;
+  $('rt'+ri).innerHTML=`<span style="color:${c}">●</span> ${no}`;
+}
+function unpair(q,li){
+  const m=q._match; const r=m.picks['L'+li]; if(!r) return;
+  const ri=r.slice(1);
+  delete m.picks['L'+li]; delete m.colorOf['L'+li];
+  m.count=Object.keys(m.picks).length;
+  const lEl=document.querySelector(`.match-item[data-side="L"][data-i="${li}"]`);
+  const rEl=document.querySelector(`.match-item[data-side="R"][data-i="${ri}"]`);
+  lEl.classList.remove('matched'); rEl.classList.remove('matched');
+  lEl.style.borderColor=''; rEl.style.borderColor='';
+  $('lt'+li).textContent=''; $('rt'+ri).textContent='';
+}
+/* ---------- order ---------- */
+function paintOrder(q){
+  $('orderList').innerHTML=q._items.map((it,i)=>`
+    <div class="order-item">
+      <span class="order-num mono">${i+1}</span>
+      <span style="flex:1">${esc(it.t)}</span>
+      <span class="order-arrows">
+        <button onclick="moveOrder(${i},-1)" ${i===0?'disabled':''}><i class="fas fa-chevron-up"></i></button>
+        <button onclick="moveOrder(${i},1)" ${i===q._items.length-1?'disabled':''}><i class="fas fa-chevron-down"></i></button>
+      </span>
+    </div>`).join("");
+}
+function moveOrder(i,dir){
+  const q=currentQ(); if(S.answeredThis) return;
+  const j=i+dir; if(j<0||j>=q._items.length) return;
+  [q._items[i],q._items[j]]=[q._items[j],q._items[i]];
+  paintOrder(q);
+}
+
+/* =====================================================================
+   GRADING
+   ===================================================================== */
+function normAns(s){
+  s=String(s).toLowerCase().trim().replace(/\s+/g,'');
+  if(/^[01]+$/.test(s)) return s.replace(/^0+(?=[01])/,'');
+  if(/^\d+$/.test(s)) return String(parseInt(s,10));
+  return s.replace(/[^a-z0-9]/g,'');
+}
+function gradeQuestion(q){
+  switch(q.type){
+    case 'mc': case 'tf':{
+      if(q._sel==null || !q._opts[q._sel]) return {ok:false,need:'select'};
+      return {ok:q._opts[q._sel].i===q.answer};
+    }
+    case 'multi':{
+      if(!q._sel||!q._sel.length) return {ok:false,need:'select'};
+      const chosen=q._sel.filter(vi=>q._opts[vi]).map(vi=>q._opts[vi].i).sort();
+      const want=q.answer.slice().sort();
+      return {ok:JSON.stringify(chosen)===JSON.stringify(want)};
+    }
+    case 'type': case 'typed_mc': case 'blank': case 'trace':{
+      const inp=$('typeInput'); const v=inp?inp.value:'';
+      if(v.trim()==='') return {ok:false,need:'type'};
+      const given=normAns(v);
+      const acc=(q.accept&&q.accept.length?q.accept:[q.answer]).map(normAns);
+      return {ok:acc.includes(given)};
+    }
+    case 'bits':{ return {ok:bitsValue(q)===q.answer}; }
+    case 'order':{ return {ok:q._items.every((it,i)=>it.correct===i)}; }
+    case 'match':{
+      const m=q._match;
+      if(!m||m.count<q.pairs.length) return {ok:false,need:'match'};
+      let ok=true; for(const k in m.picks){ const L=+k.slice(1); const R=+m.picks[k].slice(1); if(L!==R) ok=false; }
+      return {ok};
+    }
+  }
+  return {ok:false};
+}
+
+function submitAnswer(){
+  if(S.answeredThis) return;
+  const q=currentQ();
+  const res=gradeQuestion(q);
+  if(res.need){
+    const msg={select:"Pick an answer first.",type:"Type your answer first.",match:"Match every pair first."}[res.need];
+    toast(msg); return;
+  }
+  stopTimer();
+  S.answeredThis=true;
+  const l=LEVELS[S.levelIdx];
+  const pts=qPoints(q);
+  // lock UI + show correctness
+  revealCorrectness(q,res.ok);
+  if(res.ok){
+    S.score+=pts; S.correct++; S.perLevel[l.key].c++; S.perLevel[l.key].pts+=pts;
+    pulse('correct');
+  } else {
+    S.wrong++; S.perLevel[l.key].w++;
+    pulse('wrong');
+  }
+  showFeedback(q,res.ok);
+  const lockBtn=$('lockBtn'); if(lockBtn){ lockBtn.disabled=true; lockBtn.style.display='none'; }
+  // next button
+  const last = S.qIdx===currentDeck().length-1;
+  $('submitRow').insertAdjacentHTML('beforeend',
+    `<div class="next-row"><button class="btn-full" id="nextBtn" onclick="nextQuestion()">${last?'Finish level':'Next question'} <i class="fas fa-angle-right"></i></button></div>`);
+  syncProgress({event:"answer", cat:q.cat, correct:res.ok, type:q.type});
+}
+
+function revealCorrectness(q,ok){
+  if(q.type==='mc'||q.type==='tf'){
+    document.querySelectorAll('#opts .opt').forEach((b,i)=>{
+      b.disabled=true;
+      if(q._opts[i].i===q.answer) b.classList.add('correct');
+      else if(i===q._sel) b.classList.add('wrong');
+    });
+  }
+  if(q.type==='multi'){
+    document.querySelectorAll('#opts .opt').forEach((b,i)=>{
+      b.disabled=true;
+      const isWant=q.answer.includes(q._opts[i].i);
+      const chosen=q._sel.includes(i);
+      if(isWant) b.classList.add('correct');
+      else if(chosen) b.classList.add('wrong');
+    });
+  }
+  if(q.type==='type'||q.type==='typed_mc'||q.type==='blank'||q.type==='trace'){
+    const inp=$('typeInput'); if(inp){ inp.disabled=true; inp.classList.add(ok?'correct':'wrong'); }
+  }
+  if(q.type==='bits'){ document.querySelectorAll('.bit .v').forEach(v=>v.style.pointerEvents='none'); }
+  if(q.type==='order'){
+    document.querySelectorAll('#orderList .order-item').forEach((el,i)=>{
+      el.classList.add(q._items[i].correct===i?'correct':'wrong');
+      el.querySelectorAll('button').forEach(b=>b.disabled=true);
+    });
+  }
+  if(q.type==='match'){ document.querySelectorAll('.match-item').forEach(el=>el.disabled=true); }
+}
+
+function correctAnswerText(q){
+  if(q.type==='mc') return q.opts[q.answer];
+  if(q.type==='tf') return q.answer?'True':'False';
+  if(q.type==='type'||q.type==='typed_mc'||q.type==='blank'||q.type==='trace') return q.answer;
+  if(q.type==='bits') return q.answer+' = '+q.answer.toString(2).padStart(q.bitcount,'0');
+  if(q.type==='multi') return q.answer.map(i=>q.opts[i]).join(', ');
+  if(q.type==='order') return q.items.join(' → ');
+  if(q.type==='match') return q.pairs.map(p=>p[0]+'→'+p[1]).join(', ');
+  return '';
+}
+function showFeedback(q,ok){
+  const fb=$('feedback');
+  let ansLine="";
+  if(!ok){
+    const correctText=correctAnswerText(q);
+    if(correctText) ansLine=`<span class="ans">Answer: ${esc(correctText)}.</span> `;
+  }
+  nextNudge(); // nudge focus to next button for keyboard users
+  fb.className='feedback show '+(ok?'correct':'wrong');
+  fb.innerHTML=`
+    <div class="fb-head ${ok?'correct':'wrong'}">
+      <span class="fb-icon ${ok?'correct':'wrong'}"><i class="fas ${ok?'fa-check':'fa-xmark'}"></i></span>
+      ${ok?`Correct · +${qPoints(q)} points`:'Not quite'}
+    </div>
+    <div class="fb-why">${ok?'':ansLine}${esc(q.why)}</div>`;
+}
+function nextNudge(){}
+
+function nextQuestion(){ stopTimer(); S.qIdx++; renderQuestion(); }
+
+/* =====================================================================
+   END OF LEVEL  /  FINISH
+   ===================================================================== */
+function endLevel(){
+  if(S.levelIdx < LEVELS.length-1){
+    S.levelIdx++; renderLevelInterstitial();
+  } else {
+    syncProgress({event:"finished"});
+    renderResults();
+  }
+}
+function renderLevelInterstitial(){
+  screen().className="wrap center-screen";
+  const done=LEVELS[S.levelIdx-1], next=LEVELS[S.levelIdx];
+  const d=S.perLevel[done.key];
+  screen().innerHTML=`
+    <div class="level-intro">
+      <div class="lv-eyebrow">Level ${S.levelIdx} complete</div>
+      <div class="lv-name glow-text" style="color:${done.hex};font-size:clamp(34px,8vw,56px)">${done.name} done</div>
+      <div class="lv-desc">Your team scored <b style="color:var(--green)">${d.c}</b> of ${S.deck[done.key].length} correct in this level
+        — <b style="color:var(--green)">${d.pts}</b> points earned.</div>
+      <div style="margin-top:8px;color:var(--ink-soft);font-family:'JetBrains Mono';font-size:13px">Running total: ${S.score} pts</div>
+      <div style="margin-top:30px">
+        <button class="btn-full" style="width:auto;padding:16px 40px" onclick="renderLevelIntro()">
+          Continue to ${next.name} <i class="fas fa-angle-right"></i></button>
+      </div>
+    </div>`;
+  syncProgress({event:"levelComplete", levelDone:done.key});
+}
+
+function renderResults(){
+  screen().className="wrap center-screen";
+  const totalQ=Object.values(S.deck).reduce((a,d)=>a+d.length,0);
+  const maxPts=LEVELS.reduce((a,l)=>{
+    const deck=S.deck[l.key]||[];
+    return a + (l.mixed ? deck.reduce((s,q)=>s+(q.pts||2),0) : l.pts*deck.length);
+  },0);
+  const pct=Math.round(S.score/maxPts*100);
+  let medal,line;
+  if(pct>=85){medal="🏆";line="Outstanding — a championship performance!";}
+  else if(pct>=65){medal="🥇";line="Excellent teamwork. A very strong result!";}
+  else if(pct>=45){medal="🥈";line="Well played — solid work across the levels.";}
+  else {medal="🎖️";line="Good effort! Every question was a chance to learn.";}
+  setTimeout(()=>confetti(),200);
+  screen().innerHTML=`
+    <div class="result-screen">
+      <div style="font-size:60px">${medal}</div>
+      <div class="done-eyebrow">${esc(S.team)} · Final result</div>
+      <div class="final-score mono">${S.score}<span class="max"> / ${maxPts}</span></div>
+      <div class="result-line">${line}<br>${S.correct} correct · ${S.wrong} missed · ${pct}% of points</div>
+      <div class="stat-row">
+        ${LEVELS.map(l=>{const d=S.perLevel[l.key];return `
+          <div class="panel bracket-card stat-box">
+            <div class="sv mono" style="color:${l.hex}">${d.pts}</div>
+            <div class="sl">${l.name} pts</div>
+          </div>`;}).join("")}
+      </div>
+      <div class="lvl-breakdown">
+        ${LEVELS.map(l=>{const d=S.perLevel[l.key];const tot=S.deck[l.key].length;const p=Math.round(d.c/tot*100);return `
+          <div class="panel lvl-bd-row">
+            <span class="lname" style="color:${l.hex}">${l.name}</span>
+            <span class="lbar"><span class="lfill" style="width:${p}%;background:${l.hex}"></span></span>
+            <span class="lval">${d.c}/${tot}</span>
+          </div>`;}).join("")}
+      </div>
+      <div style="font-family:'JetBrains Mono';font-size:12px;color:var(--muted);letter-spacing:1px">
+        ${SYNC.on()?'<i class="fas fa-circle-check" style="color:var(--green)"></i> Result saved to the live leaderboard':'Offline mode — show this screen to your teacher'}
+      </div>
+      <div style="margin-top:26px">
+        <button class="btn-ghost" style="border-radius:11px;padding:14px 28px" onclick="location.reload()"><i class="fas fa-rotate-right"></i> New team</button>
+      </div>
+      <div class="title-credit" style="margin-top:34px">ICT Quiz Bee · Academic Festival 2026<br><span class="credit-name">Teacher Rommel</span> · Golden International School</div>
+    </div>`;
+}
+
+function confetti(n=120){
+  const cs=["#00ff8c","#ffd23f","#34f5e0","#ff5d6d","#d7ffe9"];
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div'); d.style.cssText=`position:fixed;width:9px;height:9px;z-index:700;border-radius:1px;pointer-events:none;left:${Math.random()*100}vw;top:-20px;background:${cs[i%cs.length]}`;
+    document.body.appendChild(d);
+    const dur=1600+Math.random()*1400,x=(Math.random()-.5)*320;
+    d.animate([{transform:'translate(0,0)',opacity:1},{transform:`translate(${x}px,${innerHeight+60}px) rotate(${Math.random()*720}deg)`,opacity:.9}],{duration:dur,easing:'cubic-bezier(.2,.6,.4,1)'});
+    setTimeout(()=>d.remove(),dur);
+  }
+}
+
+/* =====================================================================
+   KEYBOARD
+   ===================================================================== */
+document.addEventListener('keydown',e=>{
+  const typing=e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='SELECT');
+  const q = (S.team && S.levelIdx<LEVELS.length && currentDeck() && currentDeck()[S.qIdx]) ? currentQ() : null;
+  if(!q) return;
+  if(!S.answeredThis && (q.type==='mc'||q.type==='tf') && !typing){
+    const map={a:0,b:1,c:2,d:3,'1':0,'2':1,'3':2,'4':3}; const k=e.key.toLowerCase();
+    if(k in map && q._opts && map[k]<q._opts.length){ e.preventDefault(); pickSingle(map[k]); }
+  }
+  if(e.key==='Enter' && !typing){
+    if(!S.answeredThis){ const lb=$('lockBtn'); if(lb && !lb.disabled){ e.preventDefault(); submitAnswer(); } }
+    else { const nb=$('nextBtn'); if(nb){ e.preventDefault(); nextQuestion(); } }
+  }
+});
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+renderTitle();
+
+</script>
+</body>
+</html>
